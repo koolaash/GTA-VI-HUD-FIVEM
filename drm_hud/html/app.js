@@ -316,6 +316,14 @@ const settings = {
     isPointerShowChecked: true,
     isDegreesShowChecked: true,
     isCinematicModeChecked: false,
+    isShowHealthPercentChecked: true,
+    isShowArmorPercentChecked: true,
+    isShowOxygenPercentChecked: true,
+    isShowHungerPercentChecked: true,
+    isShowThirstPercentChecked: true,
+    isShowStressPercentChecked: true,
+    isShowNitroPercentChecked: true,
+    isShowHarnessPercentChecked: true,
 };
 
 const MENU = [
@@ -339,6 +347,16 @@ const MENU = [
         ['isDynamicHungerChecked', 'dynamicHunger'],
         ['isDynamicThirstChecked', 'dynamicThirst'],
         ['isDynamicStressChecked', 'dynamicStress'],
+    ]],
+    ['percentages', [
+        ['isShowHealthPercentChecked', 'showHealthPercent'],
+        ['isShowArmorPercentChecked', 'showArmorPercent'],
+        ['isShowOxygenPercentChecked', 'showOxygenPercent'],
+        ['isShowHungerPercentChecked', 'showHungerPercent'],
+        ['isShowThirstPercentChecked', 'showThirstPercent'],
+        ['isShowStressPercentChecked', 'showStressPercent'],
+        ['isShowNitroPercentChecked', 'showNitroPercent'],
+        ['isShowHarnessPercentChecked', 'showHarnessPercent'],
     ]],
     ['vehicle', [
         ['isChangeFPSChecked', 'changeFPS'],
@@ -376,14 +394,90 @@ const VEHICLE_ROWS = [
     { id: 'harness', icon: 'harness', color: 'var(--lilac)' },
 ];
 
+const STAT_PERCENT_KEYS = {
+    health: 'isShowHealthPercentChecked',
+    armor: 'isShowArmorPercentChecked',
+    stamina: 'isShowOxygenPercentChecked',
+    hunger: 'isShowHungerPercentChecked',
+    thirst: 'isShowThirstPercentChecked',
+    stress: 'isShowStressPercentChecked',
+    nitro: 'isShowNitroPercentChecked',
+    harness: 'isShowHarnessPercentChecked',
+};
+
 const rows = {};
+const pctTargets = {};
+const pctCurrent = {};
+let pctRaf = 0;
+let pctLastTime = 0;
+
+function animatePercentages() {
+    const now = performance.now();
+    const dt = Math.min(now - pctLastTime, 100);
+    pctLastTime = now;
+    let keepAnimating = false;
+
+    for (const id in pctTargets) {
+        const target = pctTargets[id];
+        let curr = pctCurrent[id];
+        if (curr === undefined) {
+            curr = target;
+            pctCurrent[id] = target;
+        }
+
+        const diff = target - curr;
+        if (Math.abs(diff) < 0.2) {
+            pctCurrent[id] = target;
+        } else {
+            pctCurrent[id] += diff * (1 - Math.exp(-dt / 180));
+            keepAnimating = true;
+        }
+
+        const pctEl = rows[id]?.querySelector('.row-pct');
+        if (pctEl) {
+            pctEl.textContent = `${Math.round(pctCurrent[id])}%`;
+        }
+    }
+
+    if (keepAnimating) {
+        pctRaf = requestAnimationFrame(animatePercentages);
+    } else {
+        pctRaf = 0;
+    }
+}
+
+function updateRowPercent(id, value) {
+    const clamped = Math.round(clamp(num(value)));
+    pctTargets[id] = clamped;
+    if (pctCurrent[id] === undefined) {
+        pctCurrent[id] = clamped;
+        const pctEl = rows[id]?.querySelector('.row-pct');
+        if (pctEl) {
+            pctEl.textContent = `${clamped}%`;
+        }
+    } else if (!pctRaf) {
+        pctLastTime = performance.now();
+        pctRaf = requestAnimationFrame(animatePercentages);
+    }
+}
+
+function syncPercentVisibilities() {
+    for (const id in STAT_PERCENT_KEYS) {
+        const row = rows[id];
+        if (!row) continue;
+        const pctEl = row.querySelector('.row-pct');
+        if (!pctEl) continue;
+        const key = STAT_PERCENT_KEYS[id];
+        pctEl.hidden = settings[key] === false;
+    }
+}
 
 function makeRow({ id, icon, notch }) {
     const row = document.createElement('div');
     row.className = 'row';
     row.dataset.stat = id;
     row.hidden = true;
-    row.innerHTML = `<div class="icon"><svg><use href="#i-${icon}"/></svg></div><div class="track"><div class="fill">${notch ? '<div class="notch"></div>' : ''}</div></div>`;
+    row.innerHTML = `<div class="icon"><svg><use href="#i-${icon}"/></svg></div><div class="track"><div class="fill">${notch ? '<div class="notch"></div>' : ''}</div></div><div class="row-pct" id="pct-${id}">100%</div>`;
     rows[id] = row;
     return row;
 }
@@ -393,8 +487,17 @@ function setRow(id, visible, pct, low) {
     if (!row) return;
     row.hidden = !visible;
     if (!visible) return;
-    row.querySelector('.fill').style.width = `${clamp(num(pct))}%`;
+    const clamped = clamp(num(pct));
+    row.querySelector('.fill').style.width = `${clamped}%`;
     row.classList.toggle('low', !!low);
+
+    updateRowPercent(id, clamped);
+
+    const pctKey = STAT_PERCENT_KEYS[id];
+    const pctEl = row.querySelector('.row-pct');
+    if (pctEl && pctKey) {
+        pctEl.hidden = settings[pctKey] === false;
+    }
 }
 
 const lastValues = {};
@@ -576,6 +679,9 @@ function onSetting(key, value) {
     applyMapClasses();
     syncMenuInputs();
     renderLogo();
+    if (key.includes('PercentChecked')) {
+        syncPercentVisibilities();
+    }
     if (key === 'isShowNavChecked' && !isEditMode) {
         renderNav();
     }
@@ -1195,6 +1301,9 @@ sections.addEventListener('change', (e) => {
     post(input.dataset.cb);
     applyMapClasses();
     renderLogo();
+    if (input.dataset.key.includes('PercentChecked')) {
+        syncPercentVisibilities();
+    }
     if (input.dataset.key === 'isShowVehicleInfoChecked' && !isEditMode) {
         $('#vehicle-info').hidden = (!vehicle.show || !input.checked);
     }
@@ -2147,6 +2256,7 @@ window.addEventListener('message', (e) => {
             navUnits = data.navUnits === 'metric' ? 'metric' : 'imperial';
             if (data.locale) document.documentElement.lang = data.locale;
             if (data.menu) applyMenuText(data.menu);
+            syncPercentVisibilities();
             if (data.customLayout && typeof data.customLayout === 'object') {
                 mergeCustoms(data.customLayout);
                 applyCustoms();
@@ -2156,6 +2266,7 @@ window.addEventListener('message', (e) => {
 });
 
 applyMapClasses();
+syncPercentVisibilities();
 setHudMode('onFoot');
 syncLayoutInputs();
 renderColorPickers();

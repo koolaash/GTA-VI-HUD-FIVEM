@@ -233,11 +233,7 @@ CreateThread(function()
                     rpm = 0.0
                     gear = speed > 0 and 1 or 'N'
                 else
-                    isElectric = GetIsVehicleElectric and GetIsVehicleElectric(vehModel) or false
-                    if not isElectric then
-                        local elShare = GetVehicleHandlingFloat(vehicle, "CCarHandlingData", "fElectricShare")
-                        if elShare and elShare > 0.0 then isElectric = true end
-                    end
+                    isElectric = (GetIsVehicleElectric and GetIsVehicleElectric(vehModel)) and true or false
 
                     local curRpm = GetVehicleCurrentRpm(vehicle) or 0.0
                     local isRunning = (GetIsVehicleEngineRunning(vehicle) == 1 or GetIsVehicleEngineRunning(vehicle) == true or curRpm > 0.08)

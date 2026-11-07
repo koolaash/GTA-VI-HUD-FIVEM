@@ -88,6 +88,7 @@ end
 function HUD.MoneyChange(mtype, amount, isMinus, cash, bank)
     HUD.Data.cash = cash
     HUD.Data.bank = bank
+    if Config.ShowMoney == false then return end
     SendNUIMessage({
         action = 'updatemoney',
         cash = math.floor(cash),
@@ -99,6 +100,7 @@ function HUD.MoneyChange(mtype, amount, isMinus, cash, bank)
 end
 
 function HUD.ShowAccount(mtype, amount)
+    if Config.ShowMoney == false then return end
     SendNUIMessage({ action = 'show', type = mtype, amount = math.floor(amount) })
 end
 
@@ -136,7 +138,7 @@ local function loadSettings(settings)
 end
 
 local NAV_KEYS = { 'recalc', 'proceed', 'left', 'right', 'straight', 'sharpLeft', 'sharpRight', 'arrived', 'm', 'km', 'ft', 'mi' }
-local SECTION_KEYS = { 'map', 'compass', 'status', 'vehicle', 'logo', 'sound', 'cinematic' }
+local SECTION_KEYS = { 'map', 'compass', 'status', 'percentages', 'vehicle', 'logo', 'sound', 'cinematic' }
 
 local function localeGroup(prefix, keys)
     local out = {}
@@ -281,6 +283,14 @@ local toggles = {
     resetHudSounds = 'isResetSoundsChecked',
     checklistSounds = 'isListSoundsChecked',
     HideMap = 'isHideMapChecked',
+    showHealthPercent = 'isShowHealthPercentChecked',
+    showArmorPercent = 'isShowArmorPercentChecked',
+    showOxygenPercent = 'isShowOxygenPercentChecked',
+    showHungerPercent = 'isShowHungerPercentChecked',
+    showThirstPercent = 'isShowThirstPercentChecked',
+    showStressPercent = 'isShowStressPercentChecked',
+    showNitroPercent = 'isShowNitroPercentChecked',
+    showHarnessPercent = 'isShowHarnessPercentChecked',
 }
 
 for callback, key in pairs(toggles) do
@@ -340,4 +350,16 @@ AddEventHandler('onClientResourceStart', function(resourceName)
         Wait(500)
         HUD.ApplySettings()
     end)
+end)
+
+CreateThread(function()
+    while true do
+        if not Config.ShowNativeCash then
+            HideHudComponentThisFrame(3)  -- HUD_CASH
+            HideHudComponentThisFrame(4)  -- HUD_MP_CASH
+            HideHudComponentThisFrame(13) -- HUD_CASH_CHANGE
+            DisplayCash(false)
+        end
+        Wait(0)
+    end
 end)

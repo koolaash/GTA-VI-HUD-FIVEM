@@ -27,16 +27,21 @@ end)
 
 CreateThread(function()
     while true do
-        if HUD.IsLoggedIn() then
+        if HUD.IsLoggedIn() and (Config.WeaponStress == nil or Config.WeaponStress) then
             local ped = PlayerPedId()
             local weapon = GetSelectedPedWeapon(ped)
             if weapon ~= `WEAPON_UNARMED` then
-                if IsPedShooting(ped) and not Config.WhitelistedWeaponStress[weapon] and math.random() < Config.StressChance then
-                    TriggerServerEvent('hud:server:GainStress', math.random(1, 3))
+                local chance = Config.WeaponStressChance or Config.StressChance or 0.1
+                if IsPedShooting(ped) and not Config.WhitelistedWeaponStress[weapon] and math.random() < chance then
+                    local minAmount = (Config.WeaponStressAmount and Config.WeaponStressAmount.min) or 1
+                    local maxAmount = (Config.WeaponStressAmount and Config.WeaponStressAmount.max) or 3
+                    TriggerServerEvent('hud:server:GainStress', math.random(minAmount, maxAmount))
                 end
             else
                 Wait(1000)
             end
+        else
+            Wait(1000)
         end
         Wait(0)
     end
@@ -74,9 +79,11 @@ CreateThread(function()
             Wait(1000)
             for _ = 1, falls do
                 Wait(750)
-                DoScreenFadeOut(200)
-                Wait(1000)
-                DoScreenFadeIn(200)
+                if Config.EnableStressBlackout ~= false then
+                    DoScreenFadeOut(200)
+                    Wait(1000)
+                    DoScreenFadeIn(200)
+                end
                 TriggerScreenblurFadeIn(1000.0)
                 Wait(blur)
                 TriggerScreenblurFadeOut(1000.0)

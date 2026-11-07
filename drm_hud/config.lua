@@ -1,12 +1,16 @@
 Config = {}
 Config.OpenMenu = 'I'
-Config.StressChance = 0.1
+Config.StressChance = 0.1 -- Backward compatibility fallback
+Config.WeaponStress = true -- Toggle weapon shooting stress on/off
+Config.WeaponStressChance = 0.1 -- Chance (0.0 - 1.0) to gain stress when shooting
+Config.WeaponStressAmount = { min = 0.5, max = 1 } -- Stress amount range given per shot
+Config.EnableStressBlackout = false -- Toggle screen blackout fade when reaching 100 stress
 
 Config.MeasurementSystem = 'imperial' -- 'metric' | 'imperial'
 
 Config.MinimumStress = 50
-Config.MinimumSpeedUnbuckled = 50
-Config.MinimumSpeed = 100
+Config.MinimumSpeedUnbuckled = 70
+Config.MinimumSpeed = 170
 Config.DisableStress = false
 Config.ShowCompass = true
 Config.ShowFullHealthInVehicle = true
@@ -14,6 +18,9 @@ Config.VehicleHealthTimeout = 6000
 Config.VehicleHealthLow = 50
 Config.StatusTimeout = 6000
 Config.ShowStatusAlways = false
+
+Config.ShowNativeCash = false -- Set to false to hide default GTA5 cash & bank UI (top right)
+Config.ShowMoney = true       -- Set to false to disable drm_hud money display
 
 Config.ShowZone = true
 Config.ShowNavigation = true
@@ -182,6 +189,14 @@ Config.Menu = {
     isPointerShowChecked = true,
     isDegreesShowChecked = true,
     isCinematicModeChecked = false,
+    isShowHealthPercentChecked = true,
+    isShowArmorPercentChecked = true,
+    isShowOxygenPercentChecked = true,
+    isShowHungerPercentChecked = true,
+    isShowThirstPercentChecked = true,
+    isShowStressPercentChecked = true,
+    isShowNitroPercentChecked = true,
+    isShowHarnessPercentChecked = true,
 }
 
 Config.CustomWeaponHud = true
@@ -197,4 +212,3 @@ Config.WeaponHudHidden = {
 --   'nui://qb-inventory/html/images/'
 --   Or any custom resource path (must end with '/')
 Config.WeaponIconPath = 'auto'
-
